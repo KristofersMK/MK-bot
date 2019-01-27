@@ -1,0 +1,42 @@
+$ mkdir nodebot
+$ cd nodebot
+npm install botbuilder --save
+$ npm install eslint --save-dev
+const express = require('express');
+const bodyParser = require('body-parser');
+
+const app = express();
+app.use(bodyParser.urlencoded({ extended: false }));
+app.use(bodyParser.json());
+
+// middleware error handling
+app.use((err, req, res, next) => {
+if (res.headersSent) {
+return next(err);
+}
+console.error(err.stack);
+return res.status(500).json({ message: err.message });
+});
+app.listen(process.env.PORT || 3000, () => {
+console.log('Example app listening on port 3000!');
+});
+const builder = require(‘botbuilder’);
+const env = process.env;
+function init(app) {
+// Create chat bot and binding
+const connector = new builder.ChatConnector({
+appId: env.BOT_APP_ID,
+appPassword: env.BOT_APP_PASSWORD,
+});
+app.post(‘/api/news’, connector.listen());
+const bot = new builder.UniversalBot(connector, (session) => {
+session.send(‘Sorry, I did not understand \’%s\’. Send \’help\’ if you need assistance.’, session.message.text);
+});
+// Print out help message
+bot.dialog(‘Help’, (session) => {
+session.endDialog(‘Hi! this is a help message’);
+}).triggerAction({
+matches: ‘Help’,
+});
+}
+module.exports.init = init;
